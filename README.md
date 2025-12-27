@@ -1,5 +1,6 @@
 # Week 6: Async Rust Gateway Service
 
+![Week 6](image.png)
 **Complete IIoT telemetry system in a single Cargo workspace.**
 
 This is a self-contained project with all components needed to run the full hardware-to-cloud pipeline:
@@ -86,18 +87,21 @@ Node 1 → LoRa → Node 2 (spawned by Week 6) → probe-rs stdout
 ### Component Responsibilities
 
 **Main Task**:
+
 - Spawns probe-rs subprocess with Node 2 firmware
 - Creates parser and processor tasks
 - Waits for Ctrl+C signal
 - Coordinates graceful shutdown
 
 **Parser Task** (`parse_probe_rs_output`):
+
 - Reads probe-rs stdout line-by-line (async)
 - Extracts JSON from defmt log lines
 - Deserializes with serde_json
 - Sends to channel (with error handling)
 
 **Processor Task** (`process_telemetry`):
+
 - Receives packets from channel
 - Logs structured telemetry data
 - **TODO Week 7**: Publish to MQTT
@@ -108,11 +112,13 @@ Node 1 → LoRa → Node 2 (spawned by Week 6) → probe-rs stdout
 Uses the same setup from Week 5:
 
 ### Node 1 - Remote Sensor
+
 - **ST-Link Probe**: `0483:374b:0671FF3833554B3043164817`
 - Runs `wk3-binary-protocol` firmware
 - Transmits sensor data via LoRa every 10 seconds
 
 ### Node 2 - Gateway (Spawned by Week 6 service)
+
 - **ST-Link Probe**: `0483:374b:066DFF3833584B3043115433`
 - Runs `wk5-gateway-firmware` (via probe-rs subprocess)
 - Receives LoRa data, outputs JSON via defmt
@@ -175,6 +181,7 @@ cargo run --package wk6-async-gateway
 ```
 
 The service will:
+
 1. Spawn probe-rs to run Node 2 firmware
 2. Start parsing stdout for JSON
 3. Log received telemetry packets
@@ -199,6 +206,7 @@ INFO Gateway local sensor (BMP280) n2_temperature=Some(25.3) n2_pressure=Some(10
 ### Stopping
 
 Press `Ctrl+C` to trigger graceful shutdown:
+
 - Service kills probe-rs subprocess
 - Processor task drains remaining packets
 - All resources cleaned up
@@ -221,24 +229,28 @@ Matches Week 5 output format:
 
 ```json
 {
-  "ts": 12000,           // Timestamp in milliseconds
-  "id": "N2",            // Node ID (gateway)
-  "n1": {                // Node 1 sensor data (via LoRa)
-    "t": 27.6,           // Temperature (°C)
-    "h": 54.1,           // Humidity (%)
-    "g": 84190           // Gas resistance (ohms)
+  "ts": 12000, // Timestamp in milliseconds
+  "id": "N2", // Node ID (gateway)
+  "n1": {
+    // Node 1 sensor data (via LoRa)
+    "t": 27.6, // Temperature (°C)
+    "h": 54.1, // Humidity (%)
+    "g": 84190 // Gas resistance (ohms)
   },
-  "n2": {                // Node 2 local sensor (BMP280) - read every 500ms
-    "t": 25.3,           // Temperature (°C)
-    "p": 1013.2          // Pressure (hPa - hectopascals)
+  "n2": {
+    // Node 2 local sensor (BMP280) - read every 500ms
+    "t": 25.3, // Temperature (°C)
+    "p": 1013.2 // Pressure (hPa - hectopascals)
   },
-  "sig": {               // LoRa signal quality
-    "rssi": -39,         // RSSI in dBm
-    "snr": 13            // SNR in dB
+  "sig": {
+    // LoRa signal quality
+    "rssi": -39, // RSSI in dBm
+    "snr": 13 // SNR in dB
   },
-  "sts": {               // Statistics
-    "rx": 42,            // Packets received
-    "err": 1             // CRC errors
+  "sts": {
+    // Statistics
+    "rx": 42, // Packets received
+    "err": 1 // CRC errors
   }
 }
 ```
@@ -267,6 +279,7 @@ cargo test
 ```
 
 Current tests:
+
 - `test_extract_json_from_log_line`: Validates JSON extraction from defmt logs
 - `test_extract_json_no_match`: Ensures non-JSON lines are ignored
 
@@ -326,12 +339,14 @@ defmt adds source location to log output:
 ```
 
 Parser must handle:
+
 1. The `JSON sent via VCP: ` prefix
 2. Escaped `\n` characters in the JSON string
 3. Actual newline after the JSON
 4. Source location suffix in parentheses
 
 **Solution**:
+
 ```rust
 json_str
     .split(" (")              // Remove source location
@@ -348,6 +363,7 @@ let (tx, rx) = mpsc::channel::<TelemetryPacket>(100);
 ```
 
 With capacity=100:
+
 - Parser blocks if channel is full (natural backpressure)
 - Processor controls consumption rate
 - No unbounded memory growth
@@ -405,5 +421,5 @@ MIT
 
 ---
 
-*Part of the 12-Week IIoT Systems Engineer Transition Plan*
-*Week 6 of 12 - Async Rust Gateway Service*
+_Part of the 12-Week IIoT Systems Engineer Transition Plan_
+_Week 6 of 12 - Async Rust Gateway Service_
