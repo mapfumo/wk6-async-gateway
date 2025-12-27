@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "gateway-service",
+    "node1-firmware",
+    "node2-firmware",
+]
+# Only build gateway-service by default (firmware needs embedded target)
+default-members = ["gateway-service"]
+resolver = "2"
+
+# Workspace-wide settings
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Antony (Tony) Mapfumo"]
+license = "MIT"
