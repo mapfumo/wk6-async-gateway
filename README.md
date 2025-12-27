@@ -588,8 +588,8 @@ wk6-async-gateway/           # Cargo workspace root
 
 This workspace includes firmware from previous weeks:
 
-- **Week 3**: [wk3-binary-protocol](../wk3-binary-protocol) - Original Node 1 sensor firmware (binary protocol with CRC)
-- **Week 5**: [wk5-gateway-firmware](../wk5-gateway-firmware) - Original Node 2 gateway firmware (LoRa receiver + JSON output)
+- **Week 3**: [wk3-binary-protocol](https://github.com/mapfumo/wk3-binary-protocol) - Original Node 1 sensor firmware (binary protocol with CRC)
+- **Week 5**: [wk5-gateway-firmware](https://github.com/mapfumo/wk5-gateway-firmware) - Original Node 2 gateway firmware (LoRa receiver + JSON output)
 - **Week 7**: wk7-mqtt-influx (coming next) - MQTT and InfluxDB integration
 
 ## Contributing
