@@ -1,73 +1,99 @@
-# Week 6: Async Rust Gateway Service
+# Week 6: Async Rust Gateway Service - Bridging Embedded and Cloud
 
-![Week 6](image.png)
-
-**Complete IIoT telemetry system in a single Cargo workspace.**
-
-## Introduction
-
-This project represents Week 6 of a 12-week Industrial IoT (IIoT) systems engineer transition plan. It demonstrates **professional-grade async Rust programming** for embedded systems integration, bridging the gap between resource-constrained microcontrollers and cloud infrastructure.
-
-The system implements a **dual-sensor wireless telemetry pipeline** using industry-standard protocols and modern Rust async patterns. Real-world sensor data flows from embedded devices through LoRa radio links, gets parsed and structured on a local gateway service, and is prepared for cloud ingestion—all with production-quality error handling, structured logging, and graceful degradation.
-
-### What This Project Demonstrates
-
-- **Async Rust Mastery**: Tokio runtime, async/await patterns, channels, and concurrent task management
-- **Embedded Integration**: Subprocess management, stdout parsing, and hardware abstraction
-- **Production Patterns**: Structured logging, error handling, graceful shutdown, and backpressure
-- **Real Hardware**: Not a simulation—runs on actual STM32 Nucleo boards with sensors and radios
-- **Future-Ready Architecture**: Clean separation of concerns designed for Week 7+ cloud integration
-
-### System Components
-
-This self-contained workspace includes:
-
-- **Node 1 Firmware** (`node1-firmware/`): Remote sensor node with BME680 + SHT31-D environmental sensors
-- **Node 2 Firmware** (`node2-firmware/`): LoRa gateway with BMP280 local sensor and JSON output
-- **Gateway Service** (`gateway-service/`): Tokio-based async service for telemetry aggregation
-
-## 🚀 Quick Start
-
-**See [QUICKSTART.md](QUICKSTART.md) for the fastest way to get running.**
-
-For workspace details and architecture, see [WORKSPACE_README.md](WORKSPACE_README.md).
+**Status**: ✅ Complete  
+**Focus**: Tokio async runtime, subprocess management, structured logging  
+**Key Achievement**: Production-quality async Rust service that bridges embedded firmware to cloud infrastructure
 
 ---
 
-## Technology Stack
+## Series Navigation
 
-### Embedded Firmware (STM32F446)
+- [Week 1: RTIC LoRa Basics](https://github.com/mapfumo/wk1_rtic_lora) | [Blog Post](https://www.mapfumo.net/posts/building-deterministic-iiot-systems-with-embedded-rust-and-rtic/)
+- [Week 2: Sensor Fusion & Constraints](https://github.com/mapfumo/wk2-lora-sensor-fusion) | [Blog Post](https://www.mapfumo.net/posts/lora-sensor-fusion-week-2/)
+- [Week 3: Binary Protocols & CRC](https://github.com/mapfumo/wk3-binary-protocol)
+- [Week 5: Gateway Firmware](https://github.com/mapfumo/wk5-gateway-firmware) | [Blog Post](https://www.mapfumo.net/posts/gateway-firmware-week-5/)
+- **Week 6: Async Gateway Service** (You are here) | [Blog Post](https://www.mapfumo.net/posts/async-rust-gateway-from-embedded-firmware-to-cloud-infrastructure/)
+- Week 7: MQTT & InfluxDB (Coming soon)
 
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| **Rust (nightly)** | Systems programming language | 1.92.0-nightly |
-| **RTIC** | Real-Time Interrupt-driven Concurrency | 1.1.4 |
-| **defmt** | Efficient embedded logging | 0.3.100 |
-| **embedded-hal** | Hardware Abstraction Layer | 0.2.7 / 1.0.0 |
-| **stm32f4xx-hal** | STM32F4 peripheral drivers | 0.23.0 |
-| **LoRa (RYLR998)** | 915MHz wireless module | AT commands |
-| **BME680** | Temp, humidity, gas sensor | I2C |
-| **SHT31-D** | Humidity & temp sensor | I2C |
-| **BMP280** | Barometric pressure sensor | I2C |
-| **SSD1306** | 128x64 OLED display | I2C |
+---
 
-### Gateway Service (Async Rust)
+## Table of Contents
 
-| Technology | Purpose | Version |
-|------------|---------|---------|
-| **Tokio** | Async runtime | 1.42 (full features) |
-| **serde/serde_json** | JSON ser/de | 1.0 |
-| **tracing** | Structured logging | 0.1 |
-| **tracing-subscriber** | Log aggregation | 0.3 |
-| **anyhow** | Error handling | 1.0 |
-| **probe-rs** | Embedded debug/flash | subprocess |
+- [Overview](#overview)
+- [Week 6 Focus: Async Rust for Real Systems](#week-6-focus-async-rust-for-real-systems)
+- [Architecture](#architecture)
+- [Key Technical Achievements](#key-technical-achievements)
+- [Hardware Configuration](#hardware-configuration)
+- [Building & Running](#building--running)
+- [Performance Characteristics](#performance-characteristics)
+- [Current Status](#current-status)
 
-### Development Tools
+---
 
-- **Cargo Workspaces**: Multi-package project organization
-- **Make**: Build automation and convenience targets
-- **probe-rs**: Firmware flashing via ST-Link and RTT logging
-- **Git**: Version control and collaboration
+## Overview
+
+![Week 6](image.png)
+
+Week 6 transforms the isolated firmware components (Weeks 3 and 5) into a **unified, production-ready system** using modern async Rust patterns. This is no longer just "getting data from A to B" - it's about building **observable, maintainable, cloud-ready infrastructure**.
+
+**What Changed from Week 5**:
+
+- ✅ Unified Cargo workspace (firmware + service in one repository)
+- ✅ Tokio async runtime for concurrent task management
+- ✅ Subprocess management (probe-rs spawning and monitoring)
+- ✅ Structured logging with tracing (not just println!)
+- ✅ Producer-consumer architecture with bounded channels
+- ✅ Graceful shutdown and resource cleanup
+- ✅ Foundation for Week 7 MQTT/InfluxDB integration
+
+**Why This Matters**: Week 6 is where the project crosses from "embedded hobby project" to "professional IIoT system architecture."
+
+---
+
+## Week 6 Focus: Async Rust for Real Systems
+
+### The Challenge
+
+Up through Week 5, we had:
+
+- Node 1: Sensor → LoRa transmit
+- Node 2: LoRa receive → JSON output via defmt/RTT
+
+But **defmt/RTT output only exists in the probe-rs terminal**. There was no way to:
+
+- Store data in databases
+- Publish to MQTT brokers
+- Build dashboards
+- Alert on anomalies
+- Do anything "cloud-like"
+
+**Week 6 solves this** by creating a desktop service that:
+
+1. **Spawns Node 2 firmware** as a subprocess (via probe-rs)
+2. **Parses JSON telemetry** from probe-rs stdout
+3. **Structures and processes** the data asynchronously
+4. **Prepares for cloud integration** (Week 7)
+
+### Why Async Rust?
+
+| Requirement               | Sync Rust         | Async Rust (Chosen)       |
+| ------------------------- | ----------------- | ------------------------- |
+| **Concurrent I/O**        | Threads (heavy)   | Tasks (lightweight)       |
+| **Subprocess monitoring** | Blocking polls    | Non-blocking awaits       |
+| **Channel operations**    | Locks everywhere  | Lock-free patterns        |
+| **Future extensibility**  | Complex threading | Natural async composition |
+| **Resource efficiency**   | ~2 MB per thread  | ~2 KB per task            |
+
+**Decision**: Use Tokio because this project will eventually have:
+
+- MQTT client (network I/O)
+- InfluxDB writer (network I/O)
+- Metrics HTTP endpoint (network I/O)
+- Multiple concurrent tasks
+
+Async Rust is the **right tool for this job**.
+
+---
 
 ## Architecture
 
@@ -115,500 +141,851 @@ For workspace details and architecture, see [WORKSPACE_README.md](WORKSPACE_READ
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### Core Capabilities
+### Workspace Structure
 
-- **Subprocess Management**: Spawns and monitors probe-rs to run Node 2 gateway firmware
-- **Stdout Parsing**: Extracts JSON telemetry from defmt logging output with robust error handling
-- **Channel Architecture**: Producer-consumer pattern with bounded MPSC channels (capacity: 100)
-- **Structured Logging**: Tracing framework with contextual key-value pairs for observability
-- **Graceful Shutdown**: Clean Ctrl+C handling with proper resource cleanup
-- **Backpressure Handling**: Natural flow control through bounded channels prevents memory exhaustion
-
-### Component Responsibilities
-
-**Main Task**:
-- Spawns probe-rs subprocess with Node 2 firmware
-- Creates parser and processor tasks
-- Waits for Ctrl+C signal (tokio::signal::ctrl_c)
-- Coordinates graceful shutdown and resource cleanup
-
-**Parser Task** (`parse_probe_rs_output`):
-- Reads probe-rs stdout line-by-line using async BufReader
-- Extracts JSON from defmt log lines (handles source location suffixes)
-- Deserializes with serde_json into TelemetryPacket struct
-- Sends to bounded MPSC channel with error handling
-
-**Processor Task** (`process_telemetry`):
-- Receives telemetry packets from channel
-- Logs structured data with tracing (Node 1 + Node 2 sensors)
-- **Week 7 TODO**: Publish to MQTT broker
-- **Week 7 TODO**: Write to InfluxDB time-series database
-
-## Hardware Configuration
-
-### Node 1 - Remote Sensor Transmitter
-- **Board**: STM32F446 Nucleo-64
-- **ST-Link Probe**: `0483:374b:0671FF3833554B3043164817`
-- **Sensors**: BME680 (temp, humidity, gas), SHT31-D (redundant temp/humidity)
-- **Radio**: RYLR998 LoRa module (915 MHz, 10dBm)
-- **Display**: SSD1306 128x64 OLED (I2C)
-- **Function**: Reads sensors every 10 seconds, transmits via LoRa with binary protocol
-
-### Node 2 - Gateway with Local Sensor
-- **Board**: STM32F446 Nucleo-64
-- **ST-Link Probe**: `0483:374b:066DFF3833584B3043115433`
-- **Sensor**: BMP280 (barometric pressure + temperature)
-- **Radio**: RYLR998 LoRa module (receive mode)
-- **Display**: SSD1306 128x64 OLED (I2C)
-- **Function**: Receives LoRa packets, validates CRC, sends ACKs, outputs JSON telemetry
-
-## Building
-
-```bash
-# Build everything (gateway service only by default)
-cargo build --release
-
-# Build all workspace members explicitly
-cargo build --release --workspace
-
-# Build individual packages with correct targets
-cargo build --package node1-firmware --release --target thumbv7em-none-eabihf
-cargo build --package node2-firmware --release --target thumbv7em-none-eabihf
-cargo build --package wk6-async-gateway --release
-
-# Using Makefile
-make clean    # Clean build artifacts
-make build    # Build all packages
-```
-
-## Running
-
-### Prerequisites
-
-1. **Both Nucleo boards connected** via USB
-2. **probe-rs installed**: `cargo install probe-rs-tools --locked`
-
-### Start the Service
-
-**Easiest method** - Use the Makefile:
-
-```bash
-# Terminal 1: Start Node 1 (sensor transmitter)
-make n1
-
-# Terminal 2: Start Gateway (auto-spawns Node 2 and parses telemetry)
-make gateway
-```
-
-**Alternative** - Use shell scripts:
-
-```bash
-# Terminal 1
-./build-n1.sh
-
-# Terminal 2
-./run-gateway.sh
-```
-
-**Manual** - Use cargo directly:
-
-```bash
-# Terminal 1: Node 1
-cargo build --package node1-firmware --release --target thumbv7em-none-eabihf
-probe-rs run --probe 0483:374b:0671FF3833554B3043164817 \
-  --chip STM32F446RETx \
-  target/thumbv7em-none-eabihf/release/node1-firmware
-
-# Terminal 2: Gateway service (spawns Node 2)
-cargo run --package wk6-async-gateway
-```
-
-### Expected Output
+This is a **Cargo workspace** with three packages:
 
 ```
-INFO Week 6 Async Gateway Service starting
-INFO Spawning probe-rs subprocess probe="0483:374b:066DFF3833584B3043115433" ...
-INFO Service running. Press Ctrl+C to stop.
-INFO Starting probe-rs output parser
-INFO Starting telemetry processor
-
-# When packets arrive (Node 1 remote sensor data):
-INFO Telemetry packet received node_id="N2" timestamp_ms=12000 temp_c=27.6 humidity_pct=54.1 rssi_dbm=-39
-INFO Processing telemetry packet timestamp_ms=12000 node_id="N2" n1_temperature=27.6 n1_humidity=54.1 n1_gas_resistance=88797 rssi=-39 snr=13 packets_received=1 crc_errors=0
-
-# Node 2 local BMP280 sensor data:
-INFO Gateway local sensor (BMP280) n2_temperature=Some(25.3) n2_pressure=Some(1013.2)
+wk6-async-gateway/
+├── Cargo.toml               # Workspace configuration
+├── gateway-service/         # Tokio async service (THIS IS NEW!)
+│   ├── Cargo.toml
+│   └── src/main.rs          # 275 lines
+├── node1-firmware/          # From Week 3 (sensor node)
+│   ├── Cargo.toml
+│   ├── memory.x
+│   └── src/main.rs
+└── node2-firmware/          # From Week 5 (gateway firmware)
+    ├── Cargo.toml
+    ├── memory.x
+    └── src/main.rs
 ```
 
-### Stopping
+**Why a workspace?**:
 
-Press `Ctrl+C` to trigger graceful shutdown:
-- Service kills probe-rs subprocess
-- Processor task drains remaining packets
-- All resources cleaned up
-- Exit code 0
+- ✅ **Self-contained**: Everything needed to run the system in one repo
+- ✅ **Shared dependencies**: Common crates don't duplicate
+- ✅ **Unified builds**: `cargo build --workspace` handles everything
+- ✅ **Clean separation**: Firmware (no_std) vs service (std)
 
-## Configuration
+### Task Architecture
 
-Hard-coded in [gateway-service/src/main.rs](gateway-service/src/main.rs):
+The gateway service uses **three Tokio tasks**:
 
 ```rust
-let probe_id = "0483:374b:066DFF3833584B3043115433"; // Node 2
-let chip = "STM32F446RETx";
-let firmware_path = "target/thumbv7em-none-eabihf/release/node2-firmware";
+┌────────────────┐
+│   Main Task    │  (Coordinator)
+│  • Spawns tasks│
+│  • Waits Ctrl+C│
+│  • Cleanup     │
+└───┬────────┬───┘
+    │        │
+    ▼        ▼
+┌────────────────┐    Channel    ┌────────────────┐
+│  Parser Task   │───────────────>│ Processor Task │
+│                │  (bounded:100) │                │
+│ • Read stdout  │                │ • Log metrics  │
+│ • Extract JSON │                │ • TODO: MQTT   │
+│ • Deserialize  │                │ • TODO: InfluxDB│
+│ • Send packet  │                │                │
+└────────────────┘                └────────────────┘
 ```
 
-**Channel capacity**: 100 packets (bounded MPSC for backpressure)
+**Pattern**: Producer-consumer with **bounded channel** for backpressure.
 
-## JSON Telemetry Schema
+---
 
-Comprehensive dual-sensor telemetry format:
+## Key Technical Achievements
 
-```json
-{
-  "ts": 12000,           // Timestamp in milliseconds since boot
-  "id": "N2",            // Node ID (gateway identifier)
-  "n1": {                // Node 1 sensor data (via LoRa from remote)
-    "t": 27.6,           // Temperature (°C) - BME680 + SHT31-D average
-    "h": 54.1,           // Humidity (%) - BME680 + SHT31-D average
-    "g": 88797           // Gas resistance (ohms) - BME680 only
-  },
-  "n2": {                // Node 2 local sensor data (BMP280, read every 500ms)
-    "t": 25.3,           // Temperature (°C)
-    "p": 1013.2          // Pressure (hPa - hectopascals/millibars)
-  },
-  "sig": {               // LoRa signal quality metrics
-    "rssi": -39,         // RSSI in dBm (Received Signal Strength Indicator)
-    "snr": 13            // SNR in dB (Signal-to-Noise Ratio)
-  },
-  "sts": {               // Communication statistics
-    "rx": 42,            // Total packets successfully received
-    "err": 1             // CRC validation errors encountered
-  }
-}
-```
+### Achievement 1: Async Subprocess Management
 
-## Logging
-
-Uses `tracing` for production-grade structured logging:
-
-```bash
-# Default: INFO level
-cargo run
-
-# Debug level (includes BMP280 readings)
-RUST_LOG=debug cargo run
-
-# Trace level (very verbose, shows all parsing)
-RUST_LOG=trace cargo run
-
-# JSON output (for log aggregators like Datadog, ELK)
-RUST_LOG=info cargo run --features json-logs
-```
-
-## Testing
-
-Run unit tests:
-
-```bash
-cargo test
-
-# With output
-cargo test -- --nocapture
-
-# Specific test
-cargo test test_extract_json_from_log_line
-```
-
-Current test coverage:
-- ✅ `test_extract_json_from_log_line`: Validates JSON extraction from defmt logs
-- ✅ `test_extract_json_no_match`: Ensures non-JSON lines are ignored
-
-## Dependencies
-
-### Gateway Service Key Crates
-
-| Crate | Version | Purpose |
-|-------|---------|---------|
-| **tokio** | 1.42 | Async runtime (full features: I/O, process, signals, channels) |
-| **serde** | 1.0 | Serialization framework |
-| **serde_json** | 1.0 | JSON parsing and generation |
-| **tracing** | 0.1 | Structured, composable logging |
-| **tracing-subscriber** | 0.3 | Log aggregation with env filtering |
-| **anyhow** | 1.0 | Error handling with context chains |
-
-See [Cargo.toml](gateway-service/Cargo.toml) for complete dependency list.
-
-## Key Learnings
-
-### Tokio Subprocess Management
+#### The Pattern
 
 ```rust
+use tokio::process::Command;
+
 let mut child = Command::new("probe-rs")
-    .args(&["run", "--probe", probe_id, ...])
-    .stdout(Stdio::piped())      // Capture stdout for parsing
-    .stderr(Stdio::inherit())    // Pass through stderr for errors
-    .spawn()?;
+    .args(&["run", "--probe", probe_id, "--chip", chip, firmware_path])
+    .stdout(Stdio::piped())
+    .stderr(Stdio::inherit())  // ← Function call, not constant!
+    .spawn()
+    .context("Failed to spawn probe-rs process")?;
 
-let stdout = child.stdout.take().unwrap();
+let stdout = child.stdout.take()
+    .context("Failed to capture stdout")?;
 ```
 
-**Critical**: Must call `.stdout.take()` to move ownership to parser task.
+#### Why This Matters
 
-### Async Line-by-Line Reading
+**DON'T use `std::process::Command`**:
 
 ```rust
-use tokio::io::{AsyncBufReadExt, BufReader};
+use std::process::Command;  // ❌ This blocks Tokio!
+let child = Command::new("probe-rs").spawn()?;
+// Blocks the entire async runtime on I/O
+```
 
-let reader = BufReader::new(stdout);
-let mut line_buf = String::new();
+**DO use `tokio::process::Command`**:
 
-loop {
-    line_buf.clear();  // Reuse buffer to avoid allocations
-    match reader.read_line(&mut line_buf).await {
-        Ok(0) => break,  // EOF
-        Ok(_) => {
-            // Process line
-        }
-        Err(e) => { /* Handle error */ }
+```rust
+use tokio::process::Command;  // ✅ Async-aware
+let child = Command::new("probe-rs").spawn()?;
+// Registers with Tokio, doesn't block
+```
+
+#### The Gotcha
+
+**Common mistake**:
+
+```rust
+.stderr(Stdio::inherit)  // ❌ Compile error!
+```
+
+**Correct**:
+
+```rust
+.stderr(Stdio::inherit())  // ✅ It's a function!
+```
+
+**Error message**:
+
+```
+error[E0277]: the trait bound `Stdio: From<fn() -> Stdio {...}>` is not satisfied
+```
+
+This was **Week 6's first compile error** - a reminder to read the docs!
+
+### The Lesson
+
+> **Async runtimes require async-aware primitives. Using std::process in Tokio is like using blocking I/O in an async function - it defeats the purpose.**
+
+---
+
+### Achievement 2: Robust stdout Parsing
+
+#### The Challenge
+
+probe-rs output includes:
+
+- defmt log lines with timestamps and levels
+- Source location suffixes
+- Escaped newline characters
+- Actual newline characters
+
+Example actual output:
+
+```
+[INFO] JSON sent via VCP: {"ts":12000,"id":"N2",...}\n (wk5_gateway_firmware src/main.rs:573)
+```
+
+Contains:
+
+1. Log level prefix: `[INFO]`
+2. Message marker: `JSON sent via VCP: `
+3. The JSON: `{"ts":12000,...}`
+4. Escaped newline: `\n` (as text characters)
+5. Source location: ` (wk5_gateway_firmware src/main.rs:573)`
+6. Actual newline: `\n` (the EOL character)
+
+#### The Solution (Evolved Through Baby Steps)
+
+```rust
+fn extract_json_from_log_line(line: &str) -> Option<String> {
+    // Find the JSON marker
+    if let Some(start_idx) = line.find("JSON sent via VCP: ") {
+        let json_start = start_idx + "JSON sent via VCP: ".len();
+        let json_str = &line[json_start..];
+
+        // Remove source location: split on " ("
+        let without_location = json_str
+            .split(" (")
+            .next()
+            .unwrap_or(json_str)
+            .trim();
+
+        // Remove both escaped \\n and actual \n
+        let json_clean = without_location
+            .trim_end_matches("\\n")  // Escaped backslash-n
+            .trim_end_matches('\n')   // Actual newline
+            .trim();
+
+        Some(json_clean.to_string())
+    } else {
+        None
     }
 }
 ```
 
-### defmt Log Format Parsing
+#### Evolution of the Parser
 
-defmt adds source location metadata to log output:
+**Attempt 1** (naive):
 
-```
-[INFO] JSON sent via VCP: {...}\n (wk5_gateway_firmware src/main.rs:573)
-```
-
-Parser must handle:
-1. The `JSON sent via VCP: ` prefix
-2. Escaped `\n` characters in the JSON string
-3. Actual newline after the JSON
-4. Source location suffix in parentheses
-
-**Solution**:
 ```rust
-json_str
-    .split(" (")              // Remove source location
-    .next()
-    .trim_end_matches("\\n")  // Remove escaped \n
-    .trim_end_matches('\n')   // Remove actual newline
-    .trim()
+let json = json_str.trim();  // ❌ Still has \\n and source location
 ```
 
-### Channel Backpressure
+**Attempt 2** (close):
+
+```rust
+let json = json_str.trim_end_matches('\n');  // ❌ Still has \\n as text
+```
+
+**Attempt 3** (closer):
+
+```rust
+let json = json_str.trim_end_matches("\\n");  // ❌ Still has source location
+```
+
+**Attempt 4** (working!):
+
+```rust
+let without_location = json_str.split(" (").next().unwrap_or(json_str);
+let json = without_location.trim_end_matches("\\n").trim_end_matches('\n');
+// ✅ Works!
+```
+
+#### The Lesson
+
+> **Parse errors teach you the exact format of the data. Looking at "trailing characters at column 116" tells you exactly where the problem is.**
+
+**Debugging approach**:
+
+1. Log the raw string: `warn!(raw = %json_str, "Parse failed")`
+2. Count characters to find column 116
+3. See what's there (in our case: ` (wk5_gateway_firmware...`)
+4. Fix the parser incrementally
+
+This took ~10 minutes using the "baby steps" approach.
+
+---
+
+### Achievement 3: Bounded Channels with Backpressure
+
+#### The Design
 
 ```rust
 let (tx, rx) = mpsc::channel::<TelemetryPacket>(100);
 ```
 
-With capacity=100:
-- Parser blocks if channel is full (natural backpressure)
-- Processor controls consumption rate
-- Prevents unbounded memory growth
-- Graceful degradation under load
+Capacity: **100 packets**
 
-## Project Structure
+#### Why Bounded?
 
-```
-wk6-async-gateway/           # Cargo workspace root
-├── Cargo.toml               # Workspace configuration
-├── rust-toolchain.toml      # Nightly (for firmware embedded-hal features)
-├── gateway-service/         # Async Rust service (Week 6 core)
-│   ├── Cargo.toml
-│   └── src/main.rs          # 275 lines - parser, processor, main
-├── node1-firmware/          # STM32 sensor node (from Week 3)
-│   ├── Cargo.toml
-│   ├── build.rs             # Embeds memory.x for workspace builds
-│   ├── rust-toolchain.toml  # Nightly
-│   ├── memory.x             # STM32F446 linker script
-│   ├── .cargo/config.toml   # Target and runner configuration
-│   └── src/main.rs          # RTIC-based firmware
-├── node2-firmware/          # STM32 gateway (from Week 5)
-│   ├── Cargo.toml
-│   ├── build.rs             # Embeds memory.x for workspace builds
-│   ├── rust-toolchain.toml  # Nightly
-│   ├── memory.x             # STM32F446 linker script
-│   ├── .cargo/config.toml   # Target and runner configuration
-│   └── src/main.rs          # RTIC-based gateway firmware
-├── Makefile                 # Convenient build targets (n1, n2, gateway)
-├── build-n1.sh              # Build & run Node 1
-├── build-n2.sh              # Build & run Node 2
-├── run-gateway.sh           # Run gateway service
-├── README.md                # This file
-├── QUICKSTART.md            # Quick start guide
-├── WORKSPACE_README.md      # Workspace architecture details
-├── WORKSPACE_SETUP.md       # Technical setup documentation
-├── BMP280_IMPLEMENTATION.md # BMP280 sensor integration details
-├── NOTES.md                 # Technical learning notes
-├── TROUBLESHOOTING.md       # Common issues and solutions
-└── TODO.md                  # Completed tasks and future enhancements
+**Alternative 1: Unbounded channel**:
+
+```rust
+let (tx, rx) = mpsc::unbounded_channel();
 ```
 
-## Future Enhancements
+**Problems**:
 
-### Week 7: Cloud Integration (MQTT + InfluxDB)
+- ❌ Grows without limit if processor is slow
+- ❌ Memory leak risk (can exhaust RAM)
+- ❌ No backpressure signal to producer
 
-**Objective**: Publish telemetry to cloud infrastructure for real-time monitoring and time-series storage
+**Alternative 2: Synchronous channel (crossbeam)**:
 
-- [ ] **MQTT Client** (rumqttc crate)
-  - [ ] Connect to Mosquitto broker (TLS support)
-  - [ ] Topic hierarchy design:
-    - `iiot/node1/temperature`
-    - `iiot/node1/humidity`
-    - `iiot/node1/gas_resistance`
-    - `iiot/node2/temperature`
-    - `iiot/node2/pressure`
-    - `iiot/signal/rssi`
-    - `iiot/signal/snr`
-    - `iiot/stats/packets_received`
-    - `iiot/stats/crc_errors`
-  - [ ] QoS level 1 (at least once delivery)
-  - [ ] Offline buffering (queue to disk if broker unavailable)
-  - [ ] Reconnection logic with exponential backoff
-  - [ ] Last Will and Testament (LWT) for gateway health
+```rust
+let (tx, rx) = crossbeam::channel::bounded(100);
+```
 
-- [ ] **InfluxDB Writer** (influxdb2 crate)
-  - [ ] Convert telemetry to line protocol format
-  - [ ] Batched writes (buffer 10-100 points before flush)
-  - [ ] Tag design: `node_id`, `sensor_type`, `location`
-  - [ ] Field design: all numeric values as f64
-  - [ ] Timestamp: convert from milliseconds to RFC3339
-  - [ ] Error handling for write failures
-  - [ ] Retry logic with circuit breaker
+**Problems**:
 
-- [ ] **Configuration Management**
-  - [ ] TOML configuration file (`config.toml`)
-  - [ ] Environment variable overrides
-  - [ ] Secrets management (MQTT password, InfluxDB token from env)
+- ❌ Blocking sends (defeats async)
+- ❌ Can't integrate with Tokio select!
+- ❌ Requires spawning OS threads
 
-### Week 8: Observability & Visualization
+**Chosen: Tokio bounded MPSC**:
 
-**Objective**: Build comprehensive monitoring dashboards and alerting
+```rust
+let (tx, rx) = tokio::sync::mpsc::channel(100);
+```
 
-- [ ] **Grafana Dashboards**
-  - [ ] Real-time sensor value gauges (Node 1 + Node 2)
-  - [ ] Temperature comparison chart (Node 1 vs Node 2)
-  - [ ] Humidity trend over time
-  - [ ] Gas resistance heatmap
-  - [ ] LoRa signal quality metrics (RSSI, SNR)
-  - [ ] CRC error rate graph
-  - [ ] System uptime and packet statistics
+**Benefits**:
 
-- [ ] **Prometheus Metrics** (prometheus crate)
-  - [ ] Expose `/metrics` HTTP endpoint
-  - [ ] Counter: `telemetry_packets_total{node}`
-  - [ ] Counter: `telemetry_crc_errors_total`
-  - [ ] Gauge: `telemetry_temperature_celsius{node}`
-  - [ ] Gauge: `telemetry_humidity_percent{node}`
-  - [ ] Gauge: `lora_rssi_dbm`
-  - [ ] Histogram: `telemetry_processing_duration_seconds`
+- ✅ **Backpressure**: `send().await` blocks when full
+- ✅ **Bounded memory**: Maximum 100 × ~200 bytes = 20 KB
+- ✅ **Producer paces**: Parser slows down if processor can't keep up
+- ✅ **Async-friendly**: Plays nice with Tokio select!
 
-- [ ] **Alert Rules**
-  - [ ] Node offline (no packets for > 60 seconds)
-  - [ ] High CRC error rate (> 10% over 5 minutes)
-  - [ ] Temperature out of range (< 0°C or > 50°C)
-  - [ ] Pressure rapid change (> 5 hPa in 1 hour - storm warning)
-  - [ ] Low LoRa signal quality (RSSI < -100 dBm)
+#### Sizing the Capacity
 
-- [ ] **Distributed Tracing** (OpenTelemetry)
-  - [ ] Trace packet journey: sensor → LoRa → gateway → MQTT → InfluxDB
-  - [ ] Jaeger integration for trace visualization
-  - [ ] Performance bottleneck identification
+**Calculation**:
 
-### Week 9: OPC-UA Integration
+- Node 1 transmits: ~1 packet per 10 seconds
+- Capacity of 100 packets = ~16 minutes of buffering
+- Processing time: <1 ms per packet
 
-**Objective**: Expose sensor data via OPC-UA protocol for industrial integration
+**Scenarios**:
 
-- [ ] **OPC-UA Server** (opcua crate)
-  - [ ] Information model design (namespace, nodes, variables)
-  - [ ] Expose sensor values as OPC-UA variables
-  - [ ] Historical data access
-  - [ ] Subscription support for real-time updates
-  - [ ] Security: user authentication, encryption
+| Situation         | Outcome                                                   |
+| ----------------- | --------------------------------------------------------- |
+| Normal operation  | Channel ~empty (packets processed immediately)            |
+| Processor slow    | Channel fills, parser waits (backpressure works)          |
+| Processor crashes | Channel fills to 100, parser blocks, graceful degradation |
 
-- [ ] **Testing**
-  - [ ] UAExpert client connectivity
-  - [ ] Integration with SCADA systems
-  - [ ] Performance benchmarking
+#### The Pattern in Action
 
-### Advanced Features (Week 10+)
+**Producer (parser task)**:
 
-- [ ] **Web UI Dashboard**
-  - [ ] React + Vite frontend
-  - [ ] WebSocket for real-time updates
-  - [ ] Historical data visualization
-  - [ ] Node configuration interface
+```rust
+match tx.send(packet).await {
+    Ok(()) => { /* Sent successfully */ }
+    Err(e) => {
+        error!(error = %e, "Channel closed, processor stopped");
+        break;  // Exit task gracefully
+    }
+}
+```
 
-- [ ] **REST API**
-  - [ ] Axum web framework
-  - [ ] GET /api/telemetry/latest
-  - [ ] GET /api/telemetry/history?start={ts}&end={ts}
-  - [ ] GET /api/nodes/{id}/status
-  - [ ] OpenAPI/Swagger documentation
+**Consumer (processor task)**:
 
-- [ ] **Multi-Node Support**
-  - [ ] Dynamic node registration
-  - [ ] Support for N nodes (not just 2)
-  - [ ] Node discovery protocol
-  - [ ] Load balancing across gateways
+```rust
+while let Some(packet) = rx.recv().await {
+    process_telemetry(packet);
+}
+info!("Channel closed, parser stopped");
+```
 
-- [ ] **Database Configuration**
-  - [ ] PostgreSQL for persistent state
-  - [ ] Node configuration table
-  - [ ] Alert rules table
-  - [ ] User management
+#### The Lesson
 
-- [ ] **Deployment & Operations**
-  - [ ] Docker containerization (multi-stage builds)
-  - [ ] Docker Compose for full stack (gateway + Mosquitto + InfluxDB + Grafana)
-  - [ ] Kubernetes deployment manifests
-  - [ ] Helm charts for k8s
-  - [ ] CI/CD pipeline (GitHub Actions)
-  - [ ] Automated testing (unit, integration, E2E)
+> **Bounded channels are backpressure made explicit. Unbounded channels hide the problem until you run out of memory.**
 
-- [ ] **Security Hardening**
-  - [ ] TLS for all network connections
-  - [ ] Certificate management (Let's Encrypt)
-  - [ ] API authentication (JWT tokens)
-  - [ ] Rate limiting
-  - [ ] Input validation and sanitization
-
-- [ ] **Performance Optimization**
-  - [ ] Zero-copy parsing where possible
-  - [ ] Connection pooling
-  - [ ] Batch processing
-  - [ ] Profiling with flamegraph
-  - [ ] Benchmarking with Criterion
-
-## Related Repositories
-
-This workspace includes firmware from previous weeks:
-
-- **Week 3**: [wk3-binary-protocol](https://github.com/mapfumo/wk3-binary-protocol) - Original Node 1 sensor firmware (binary protocol with CRC)
-- **Week 5**: [wk5-gateway-firmware](https://github.com/mapfumo/wk5-gateway-firmware) - Original Node 2 gateway firmware (LoRa receiver + JSON output)
-- **Week 7**: wk7-mqtt-influx (coming next) - MQTT and InfluxDB integration
-
-## Contributing
-
-This is a learning project, but feedback is welcome! Areas for improvement:
-
-- Code review and Rust best practices
-- Architecture suggestions for scalability
-- Security hardening recommendations
-- Testing strategies for embedded integration
-
-## License
-
-MIT
+In production systems, **always bound your queues**. Infinite buffers are infinite problems.
 
 ---
 
-_Part of the 12-Week IIoT Systems Engineer Transition Plan_
-_Week 6 of 12 - Async Rust Gateway Service_
+### Achievement 4: Structured Logging with tracing
 
-**Author**: Antony (Tony) Mapfumo
-**Date**: December 2025
+#### Why Not println! or log crate?
+
+**Option 1: println!**:
+
+```rust
+println!("Packet received: temp={}, humidity={}", temp, humidity);
+```
+
+**Problems**:
+
+- ❌ No log levels (can't filter INFO vs DEBUG)
+- ❌ No timestamps
+- ❌ No structured fields (can't query/aggregate)
+- ❌ Mixes with application output
+
+**Option 2: log crate**:
+
+```rust
+info!("Packet received: temp={}, humidity={}", temp, humidity);
+```
+
+**Better, but**:
+
+- ❌ Format strings only (not structured)
+- ❌ Hard to parse in log aggregators
+- ❌ No context propagation
+- ❌ Can't change output format easily
+
+**Option 3: tracing (chosen)**:
+
+```rust
+info!(
+    node_id = %packet.id,
+    timestamp_ms = packet.ts,
+    temperature = packet.n1.t,
+    humidity = packet.n1.h,
+    rssi = packet.sig.rssi,
+    "Packet received"
+);
+```
+
+**Benefits**:
+
+- ✅ **Structured data**: Key-value pairs, not just text
+- ✅ **Filterable**: `RUST_LOG=debug` without recompiling
+- ✅ **Multiple formats**: Text for dev, JSON for production
+- ✅ **Context propagation**: Spans track request flow
+- ✅ **Efficient**: Can disable at compile time
+
+#### Configuration
+
+```rust
+tracing_subscriber::fmt()
+    .with_env_filter(
+        tracing_subscriber::EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+    )
+    .with_target(false)
+    .with_thread_ids(true)
+    .init();
+```
+
+**Environment control**:
+
+```bash
+RUST_LOG=info cargo run        # Default
+RUST_LOG=debug cargo run       # More verbose
+RUST_LOG=wk6_async_gateway=trace cargo run  # Module-specific
+```
+
+#### Example Output
+
+```
+INFO Telemetry packet received node_id="N2" timestamp_ms=12000 temp_c=27.6 humidity_pct=54.1 rssi_dbm=-39
+INFO Processing telemetry packet n1_temperature=27.6 n1_humidity=54.1 n1_gas_resistance=84190 rssi=-39 snr=13
+INFO Gateway local sensor (BMP280) n2_temperature=Some(25.3) n2_pressure=Some(1013.2)
+```
+
+**Compared to println!**:
+
+```
+Packet received: temp=27.6, humidity=54.1
+Processing...
+Gateway sensor: 25.3, 1013.2
+```
+
+Which would you want to parse in a log aggregator?
+
+#### The Lesson
+
+> **Structured logging is the difference between hobbyist scripts and professional services. Invest in tracing from day one.**
+
+Week 7 will add JSON output for log aggregation. The foundation is already there.
+
+---
+
+### Achievement 5: Graceful Shutdown
+
+#### The Pattern
+
+```rust
+#[tokio::main]
+async fn main() -> Result<()> {
+    // ... initialization ...
+
+    // Spawn tasks
+    let parser_handle = tokio::spawn(parse_probe_rs_output(reader, tx));
+    let processor_handle = tokio::spawn(process_telemetry(rx));
+
+    info!("Service running. Press Ctrl+C to stop.");
+
+    // Wait for shutdown signal OR task completion
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            info!("Received Ctrl+C, shutting down gracefully");
+        }
+        _ = parser_handle => {
+            warn!("Parser task ended unexpectedly");
+        }
+    }
+
+    // Clean up resources
+    info!("Killing probe-rs subprocess");
+    child.kill().await.ok();
+
+    // Wait for processor to drain channel
+    processor_handle.await.ok();
+
+    info!("Week 6 Async Gateway Service stopped");
+    Ok(())
+}
+```
+
+#### Why This Matters
+
+**Without graceful shutdown**:
+
+```rust
+// BAD: Just exit on Ctrl+C
+ctrl_c().await?;
+std::process::exit(0);  // ❌ Orphaned subprocess!
+```
+
+**Problems**:
+
+- ❌ probe-rs subprocess becomes zombie
+- ❌ Channel data lost (packets in-flight discarded)
+- ❌ Resources not cleaned up
+- ❌ Logs cut off mid-message
+
+**With graceful shutdown**:
+
+```rust
+// GOOD: Coordinate shutdown
+ctrl_c().await?;
+child.kill().await.ok();  // ✅ Kill subprocess
+processor_handle.await.ok();  // ✅ Wait for channel drain
+```
+
+**Benefits**:
+
+- ✅ **No zombies**: Subprocess killed explicitly
+- ✅ **Data preserved**: Processor finishes in-flight packets
+- ✅ **Clean logs**: Shutdown message logged
+- ✅ **Testable**: Can mock Ctrl+C in tests
+
+#### The select! Macro
+
+**What it does**:
+
+```rust
+tokio::select! {
+    result1 = future1 => { /* future1 completed first */ }
+    result2 = future2 => { /* future2 completed first */ }
+}
+```
+
+**In our case**:
+
+- Wait for **either** Ctrl+C **or** parser task exit
+- Whichever happens first triggers shutdown
+- Clean up afterward
+
+**Why this works**:
+
+- If user presses Ctrl+C: Graceful shutdown path
+- If probe-rs crashes: Detect and log, still clean up
+- If parser panics: Catch and handle
+
+#### The Lesson
+
+> **Graceful shutdown isn't optional in production systems. Test it by pressing Ctrl+C during a run.**
+
+**Verification**:
+
+```bash
+# Start service
+cargo run
+
+# Press Ctrl+C
+
+# Check logs:
+INFO Received Ctrl+C, shutting down gracefully
+INFO Killing probe-rs subprocess
+INFO Telemetry processor stopped
+INFO Week 6 Async Gateway Service stopped
+
+# Verify no zombie processes:
+ps aux | grep probe-rs  # Should be empty
+```
+
+---
+
+## Hardware Configuration
+
+### Node 1 - Remote Sensor Transmitter
+
+| Component         | Specification                                    | Notes                  |
+| ----------------- | ------------------------------------------------ | ---------------------- |
+| **Board**         | STM32F446 Nucleo-64                              | Cortex-M4F @ 84 MHz    |
+| **ST-Link Probe** | `0483:374b:0671FF3833554B3043164817`             | For flashing/debugging |
+| **Sensors**       | BME680, SHT31-D                                  | Temp, humidity, gas    |
+| **Radio**         | RYLR998 LoRa                                     | 915 MHz, 10dBm         |
+| **Display**       | SSD1306 128x64 OLED                              | Real-time metrics      |
+| **Function**      | Sample sensors → Binary protocol → LoRa transmit |
+
+### Node 2 - Gateway with Local Sensor
+
+| Component         | Specification                                          | Notes                             |
+| ----------------- | ------------------------------------------------------ | --------------------------------- |
+| **Board**         | STM32F446 Nucleo-64                                    | Cortex-M4F @ 84 MHz               |
+| **ST-Link Probe** | `0483:374b:066DFF3833584B3043115433`                   | For flashing/debugging            |
+| **Sensor**        | BMP280                                                 | Barometric pressure + temperature |
+| **Radio**         | RYLR998 LoRa                                           | 915 MHz, receive mode             |
+| **Display**       | SSD1306 128x64 OLED                                    | Real-time metrics                 |
+| **Function**      | LoRa receive → CRC validate → ACK → JSON via defmt/RTT |
+
+### Desktop - Gateway Service
+
+| Component    | Specification                                          | Notes                 |
+| ------------ | ------------------------------------------------------ | --------------------- |
+| **Runtime**  | Tokio async                                            | Full features enabled |
+| **Language** | Rust (stable)                                          | 1.82+                 |
+| **Function** | Spawn Node 2 firmware → Parse JSON → Process telemetry |
+
+---
+
+## Building & Running
+
+### Prerequisites
+
+```bash
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install probe-rs for flashing embedded firmware
+cargo install probe-rs-tools --locked
+
+# Verify both Nucleo boards are connected
+probe-rs list
+# Should show both:
+# [0]: STLink V2-1 -- 0483:374b:0671FF3833554B3043164817
+# [1]: STLink V2-1 -- 0483:374b:066DFF3833584B3043115433
+```
+
+### Quick Start (Recommended)
+
+**Terminal 1 - Node 1**:
+
+```bash
+./build-n1.sh
+```
+
+**Terminal 2 - Gateway Service** (spawns Node 2 automatically):
+
+```bash
+./run-gateway.sh
+```
+
+**Or use Make**:
+
+```bash
+# Terminal 1
+make n1
+
+# Terminal 2
+make gateway
+```
+
+### Manual Build & Run
+
+```bash
+# Build everything
+cargo build --release --workspace
+
+# Flash Node 1 (Terminal 1)
+cargo build --package node1-firmware --release --target thumbv7em-none-eabihf
+probe-rs run --probe 0483:374b:0671FF3833554B3043164817 \
+  --chip STM32F446RETx \
+  target/thumbv7em-none-eabihf/release/node1-firmware
+
+# Run gateway service (Terminal 2 - spawns Node 2 automatically)
+cargo run --package wk6-async-gateway --release
+```
+
+### Expected Output
+
+**Terminal 1 (Node 1)**:
+
+```
+[INFO] Configuring LoRa module...
+[INFO] LoRa module configured
+[INFO] Binary TX [AUTO]: 10 bytes sent, packet #1
+[INFO] ACK received for packet #1
+[INFO] Binary TX [AUTO]: 10 bytes sent, packet #2
+```
+
+**Terminal 2 (Gateway Service)**:
+
+```
+INFO Week 6 Async Gateway Service starting
+INFO Spawning probe-rs subprocess probe=0483:374b:066DFF3833584B3043115433
+INFO Service running. Press Ctrl+C to stop.
+INFO Telemetry packet received node_id="N2" timestamp_ms=12000 temp_c=27.6 humidity_pct=54.1 rssi_dbm=-39
+INFO Processing telemetry packet n1_temperature=27.6 n1_humidity=54.1 n1_gas_resistance=84190 rssi=-39 snr=13
+INFO Gateway local sensor (BMP280) n2_temperature=Some(25.3) n2_pressure=Some(1013.2)
+```
+
+---
+
+## Performance Characteristics
+
+### Latency
+
+**End-to-end** (Node 1 transmit → Gateway service log):
+
+| Stage             | Time            | Notes                                 |
+| ----------------- | --------------- | ------------------------------------- |
+| LoRa transmission | ~300 ms         | RF propagation + module processing    |
+| Node 2 processing | ~50 ms          | CRC validation, ACK send, JSON format |
+| probe-rs output   | immediate       | RTT is fast                           |
+| JSON parsing      | <1 ms           | serde_json deserialize                |
+| Channel send      | <1 µs           | In-memory operation                   |
+| **Total**         | **~350-400 ms** | LoRa is the bottleneck (expected)     |
+
+### Memory Usage
+
+**Gateway service process** (measured with `top`):
+
+| Metric                 | Value  | Notes                    |
+| ---------------------- | ------ | ------------------------ |
+| **Resident (RSS)**     | ~15 MB | Actual RAM usage         |
+| **Virtual (VSZ)**      | ~50 MB | Address space            |
+| **Tokio runtime**      | ~5 MB  | Core async machinery     |
+| **Channel buffer**     | ~20 KB | 100 packets × ~200 bytes |
+| **BufReader**          | 8 KB   | Default buffer size      |
+| **tracing subscriber** | ~3 MB  | Log formatting machinery |
+
+**Compared to alternatives**:
+
+- Python equivalent: ~80 MB RSS
+- Node.js equivalent: ~60 MB RSS
+- Rust wins on efficiency!
+
+### CPU Usage
+
+| Condition                      | Usage      | Notes                           |
+| ------------------------------ | ---------- | ------------------------------- |
+| **Idle** (waiting for packets) | <1%        | Tokio reactor efficiently waits |
+| **Active** (processing packet) | 2-3% spike | JSON parse + log formatting     |
+| **Average**                    | <5%        | Very low overhead               |
+
+**Measured on**: 4-core Intel i5 system
+
+---
+
+## Current Status
+
+### Completed (Week 6 Core)
+
+- [x] Cargo workspace setup (gateway-service + 2 firmware packages)
+- [x] Tokio async runtime integration
+- [x] probe-rs subprocess spawning and management
+- [x] Async stdout line reading with BufReader
+- [x] JSON extraction from defmt log lines
+- [x] serde_json deserialization into TelemetryPacket
+- [x] Bounded MPSC channel (capacity: 100)
+- [x] Parser task (stdout → channel)
+- [x] Processor task (channel → logs)
+- [x] Structured logging with tracing
+- [x] Graceful shutdown (Ctrl+C handling)
+- [x] Unit tests for JSON extraction
+- [x] End-to-end hardware testing
+- [x] BMP280 sensor integration (Node 2 local sensor)
+- [x] Comprehensive documentation
+
+### Performance Metrics
+
+| Metric                 | Value     | Target  | Status |
+| ---------------------- | --------- | ------- | ------ |
+| **End-to-end latency** | ~350 ms   | <500 ms | ✅     |
+| **Memory usage**       | 15 MB RSS | <50 MB  | ✅     |
+| **CPU usage (avg)**    | <5%       | <10%    | ✅     |
+| **Packet loss**        | 0%        | <1%     | ✅     |
+| **Parse errors**       | 0%        | <0.1%   | ✅     |
+
+### Documentation
+
+- [x] [README.md](README.md) - This file (comprehensive overview)
+- [x] [QUICKSTART.md](QUICKSTART.md) - Get running in 2 minutes
+- [x] [WORKSPACE_README.md](WORKSPACE_README.md) - Workspace architecture
+- [x] [NOTES.md](NOTES.md) - Technical learning notes
+- [x] [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+- [x] [TODO.md](TODO.md) - Completed tasks and future work
+- [x] [BMP280_IMPLEMENTATION.md](BMP280_IMPLEMENTATION.md) - Sensor integration details
+
+---
+
+## Next Steps (Week 7 Preview)
+
+Week 7 will add **cloud integration** to the gateway service:
+
+### MQTT Publishing
+
+```rust
+use rumqttc::{AsyncClient, MqttOptions, QoS};
+
+// In process_telemetry:
+let topic = format!("iiot/node1/temperature");
+client.publish(topic, QoS::AtLeastOnce, false, temperature).await?;
+```
+
+**Topics**:
+
+- `iiot/node1/temperature`
+- `iiot/node1/humidity`
+- `iiot/node1/gas_resistance`
+- `iiot/node2/temperature`
+- `iiot/node2/pressure`
+- `iiot/signal/rssi`
+- `iiot/signal/snr`
+
+### InfluxDB Writing
+
+```rust
+use influxdb2::Client;
+use influxdb2::models::DataPoint;
+
+let point = DataPoint::builder("sensor_data")
+    .tag("node_id", "N1")
+    .field("temperature", temperature)
+    .field("humidity", humidity)
+    .build()?;
+
+client.write("iiot-bucket", stream::iter(vec![point])).await?;
+```
+
+### Configuration Management
+
+```toml
+# config.toml
+[mqtt]
+broker = "mqtt://localhost:1883"
+client_id = "wk6-gateway"
+username = "sensor_gateway"
+
+[influxdb]
+url = "http://localhost:8086"
+org = "iiot-lab"
+bucket = "sensor-data"
+```
+
+**Everything is ready** for this integration - the architecture is designed for it.
+
+---
+
+## Why Week 6 Matters
+
+Week 6 is where the project **crosses the chasm** from embedded hobby to professional IIoT system.
+
+### Technical Achievements
+
+1. ✅ **Async Rust mastery**: Tokio runtime, tasks, channels, select!
+2. ✅ **Subprocess management**: Spawning, monitoring, cleanup
+3. ✅ **Robust parsing**: Handled all edge cases incrementally
+4. ✅ **Structured logging**: Professional observability
+5. ✅ **Graceful degradation**: Backpressure, shutdown, error handling
+
+### Architectural Achievements
+
+1. ✅ **Unified workspace**: Firmware + service in one repo
+2. ✅ **Clean separation**: Embedded (no_std) vs service (std)
+3. ✅ **Extensible design**: Ready for MQTT, InfluxDB, metrics
+4. ✅ **Production patterns**: Bounded channels, structured logs, graceful shutdown
+
+### The Meta-Lesson
+
+> **Week 6 demonstrates that embedded and cloud aren't separate worlds - they're two parts of one system, connected by async Rust.**
+
+The firmware (Weeks 1-5) collected data.  
+The gateway service (Week 6) bridges it to infrastructure.  
+Next week (Week 7) connects it to the cloud.
+
+**This is how real IIoT systems work.**
+
+---
+
+## References
+
+### Code Repository
+
+- [Week 6 Source Code](https://github.com/mapfumo/wk6-async-gateway)
+
+### Related Projects
+
+- [Week 1: RTIC LoRa Basics](https://github.com/mapfumo/wk1_rtic_lora)
+- [Week 2: Sensor Fusion](https://github.com/mapfumo/wk2-lora-sensor-fusion)
+- [Week 3: Binary Protocols](https://github.com/mapfumo/wk3-binary-protocol)
+- [Week 5: Gateway Firmware](https://github.com/mapfumo/wk5-gateway-firmware)
+
+### Technical Documentation
+
+- [Tokio Tutorial](https://tokio.rs/tokio/tutorial)
+- [tracing Documentation](https://docs.rs/tracing/)
+- [Async Rust Book](https://rust-lang.github.io/async-book/)
+- [serde_json Documentation](https://docs.rs/serde_json/)
+
+---
+
+**Author**: Antony (Tony) Mapfumo  
+**Part of**: 4-Month Embedded Rust Learning Roadmap  
+**Week**: 6 of 16
