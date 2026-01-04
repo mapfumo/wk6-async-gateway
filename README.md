@@ -9,10 +9,10 @@
 ## Series Navigation
 
 - [Week 1: RTIC LoRa Basics](https://github.com/mapfumo/wk1_rtic_lora) | [Blog Post](https://www.mapfumo.net/posts/building-deterministic-iiot-systems-with-embedded-rust-and-rtic/)
-- [Week 2: Sensor Fusion & Constraints](https://github.com/mapfumo/wk2-lora-sensor-fusion) | [Blog Post](https://www.mapfumo.net/posts/lora-sensor-fusion-week-2/)
+- [Week 2: Sensor Fusion & Constraints](https://github.com/mapfumo/wk2-lora-sensor-fusion) | [Blog Post](https://www.mapfumo.net/posts/lora-sensor-fusion-when-simple-becomes-reliable/)
 - [Week 3: Binary Protocols & CRC](https://github.com/mapfumo/wk3-binary-protocol)
-- [Week 5: Gateway Firmware](https://github.com/mapfumo/wk5-gateway-firmware) | [Blog Post](https://www.mapfumo.net/posts/gateway-firmware-week-5/)
-- **Week 6: Async Gateway Service** (You are here) | [Blog Post](https://www.mapfumo.net/posts/async-rust-gateway-from-embedded-firmware-to-cloud-infrastructure/)
+- [Week 5: Gateway Firmware](https://github.com/mapfumo/wk5-gateway-firmware) | [Blog Post](https://www.mapfumo.net/posts/gateway-firmware-from-wireless-to-desktop-wk5/)
+- **Week 6: Async Gateway Service** (You are here) | [Blog Post](https://www.mapfumo.net/posts/async-gateway-week-6/)
 - Week 7: MQTT & InfluxDB (Coming soon)
 
 ---
